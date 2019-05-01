@@ -1,4 +1,6 @@
-
+rule db_downloads:
+    input:
+        ref_fasta_dir + "refseq_microbial.fasta.gz"
 
 rule get_refseq_microbial:
     input:
