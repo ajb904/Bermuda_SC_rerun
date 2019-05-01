@@ -1,0 +1,9 @@
+
+
+rule get_refseq_microbial:
+    input:
+        "scripts/get_refseq_microbial.bash"
+    output:
+        ref_fasta_dir + "refseq_microbial.fasta.gz"
+    shell:
+        "bash {input}"

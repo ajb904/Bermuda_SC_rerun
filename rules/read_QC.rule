@@ -1,0 +1,78 @@
+rule readQC:
+    input:
+        qc_dir + "raw/multiqc_report.html",
+        qc_dir + "trimmed/multiqc_report.html"
+
+#Check read quality with FastQC
+rule fastqc_raw:
+    input:
+        fq = raw_dir + "{sample}_R{read}.fastq.gz"
+    output:
+        html = qc_dir_raw + "{sample}_R{read}_fastqc.html",
+        zip = qc_dir_raw + "{sample}_R{read}_fastqc.zip"
+    params:
+        outdir = qc_dir_raw
+    wildcard_constraints:
+        read = '\d+'
+    shell:
+        "fastqc -o {params.outdir} {input.fq}"
+
+rule raw_multiqc:
+    input:
+        expand(qc_dir + "raw/{sample}_R{read}_fastqc.zip",
+            sample=SAMPLES,
+            read=[1,2]),
+    output:
+        qc_dir + "raw/multiqc_report.html"
+    threads:
+        4
+    log:
+        qc_dir + "raw/logs/multiqc.log"
+    run:
+        out_dir = os.path.dirname(output[0])
+        in_dir = os.path.dirname(input[0].split(' ')[0])
+        shell("multiqc -f -o {out_dir} {in_dir} 2> {log} 1>&2")
+
+
+#Trim adapters and low quality 3' bases with CutAdapt
+rule trim_reads:
+    input:
+        fq1=raw_dir + "{sample}_R1.fastq.gz",
+        fq2=raw_dir + "{sample}_R2.fastq.gz"
+    output:
+        fastq1=trim_dir + "{sample}_R1_trimmed.fastq.gz",
+        fastq2=trim_dir + "{sample}_R2_trimmed.fastq.gz",
+        log=trim_dir + "logs/{sample}_trimlog.txt"
+    params:
+        "-a AGATCGGAAGAGC -A AGATCGGAAGAGC -q 20 -m 150"
+    shell:
+        "cutadapt {params} -o {output.fastq1} -p {output.fastq2} {input.fq1} {input.fq2} > {output.log}"
+
+
+rule trim_fastqc:
+    input:
+        fq = trim_dir + "{sample}_R{read}_trimmed.fastq.gz"
+    output:
+        html = qc_dir + "trimmed/{sample}_R{read}_trimmed_fastqc.html",
+        zip = qc_dir + "trimmed/{sample}_R{read}_trimmed_fastqc.zip"
+    params:
+        outdir = qc_dir + "trimmed"
+    shell:
+        "fastqc -o {params.outdir} {input.fq}"
+
+
+rule trim_multiqc:
+    input:
+        expand(qc_dir + "trimmed/{sample}_R{read}_trimmed_fastqc.zip",
+            sample=SAMPLES,
+            read=[1,2]),
+    output:
+        qc_dir + "trimmed/multiqc_report.html"
+    threads:
+        4
+    log:
+        qc_dir + "trimmed/logs/multiqc.log"
+    run:
+        out_dir = os.path.dirname(output[0])
+        in_dir = os.path.dirname(input[0].split(' ')[0])
+        shell("multiqc -f -o {out_dir} {in_dir} 2> {log} 1>&2")

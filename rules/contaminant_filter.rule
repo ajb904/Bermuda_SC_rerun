@@ -1,0 +1,141 @@
+#TODO: copy scripts over and make sure up to date
+#TODO: check LAST parameters to allow faster run time
+
+rule filter_contaminants:
+    input:
+        qc_dir + "filtered/multiqc_report.html",
+        "blank_assembly/LAST/blank_10000_v_refseq_microbial.tab",
+        "blank_assembly/scaffolds_10000.fasta"
+
+
+#Assemble blank sample
+rule contaminant_assembly:
+    input:
+        fq1=trim_dir + "sct-bl_R1_trimmed.fastq.gz",
+        fq2=trim_dir + "sct-bl_R2_trimmed.fastq.gz"
+    output:
+        "blank_assembly/scaffolds.fasta"
+    threads: 6
+    params:
+        "--meta"
+    shell:
+        "python2 ~/Downloads/SPAdes-3.10.1-Linux/bin/spades.py -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o blank_assembly/"
+
+
+#Check assembly stats
+rule quast_blank:
+    input:
+        "blank_assembly/scaffolds.fasta"
+    output:
+        "blank_assembly/quast/report.html"
+    shell:
+    	"python2 ~/Downloads/quast-4.0/quast.py -o blank_assembly/quast/ -s {input}"
+
+
+#Filter contigs by size
+rule filter_blank_assembly_by_size:
+    input:
+        "blank_assembly/scaffolds.fasta"
+    output:
+         "blank_assembly/scaffolds_{minsize}.fasta"
+    wildcard_constraints:
+        minsize="[0-9]+"
+    shell:
+        "python2 scripts/filter_contigs_by_size.py {input} {wildcards.minsize} {output}"
+
+
+rule index_contaminant_assembly:
+    input:
+        "blank_assembly/scaffolds_{minsize}.fasta"
+    output:
+        expand("blank_assembly/sct-bl_{{minsize}}.{ix}.bt2", ix=range(1,5)),
+        expand("blank_assembly/sct-bl_{{minsize}}.rev.{ix}.bt2", ix=range(1,3))
+    params:
+        prefix="blank_assembly/sct-bl_{minsize}"
+    shell:
+        "bowtie2-build {input} {params.prefix}"
+
+
+#Check taxonomy of contigs with LAST v refseq microbial
+rule lastdb:
+    input:
+        ref_fasta_dir + "refseq_microbial.fasta.gz"
+    output:
+        ref_lastdb_dir + "refseq_microbial.prj"
+    params:
+        ref_lastdb_dir + "refseq_microbial"
+    shell:
+        "zcat {input} | lastdb -vcR01 {params}"
+
+rule lastal_blank:
+    input:
+        ref_lastdb_dir + "refseq_microbial.prj",
+        contigs="blank_assembly/scaffolds_{minsize}.fasta"
+    output:
+        "blank_assembly/LAST/blank_{minsize}_v_refseq_microbial.maf"
+    wildcard_constraints:
+        minsize="[0-9]+"
+    params:
+        "refs/lastdb/refseq_microbial"
+    shell:
+        "lastal {params} {input.contigs} > {output}"
+
+rule maf_convert:
+    input:
+        "blank_assembly/LAST/blank_{minsize}_v_refseq_microbial.maf"
+    output:
+        "blank_assembly/LAST/blank_{minsize}_v_refseq_microbial.tab"
+    shell:
+        "python2 ~/Downloads/last-759/scripts/maf-convert blasttab {input} > {output}"
+
+
+#Filter sample reads using fastq_screen vs blank assembly and PhiX
+
+rule fastq_screen:
+    input:
+        fq1=trim_dir + "{sample}_R1_trimmed.fastq.gz",
+        fq2=trim_dir + "{sample}_R2_trimmed.fastq.gz",
+        blank_idx="blank_assembly/sct-bl_10000.1.bt2"
+    output:
+        fq1=filt_dir + "{sample}_R1_filtered.fastq.gz",
+        fq2=filt_dir + "{sample}_R2_filtered.fastq.gz"
+    run:
+        ix = input.blank_idx.replace(".1.bt2", "")
+        conf_file = open('filter_fastqc.conf', 'w')
+        conf_file.write('DATABASE\tsct-bl_assembly\t%s\n' % ix)
+        conf_file.write('DATABASE\tPhiX\t/research/miseq/db/phiX/PhiX\n')
+        conf_file.close()
+
+        shell("python2 scripts/filter_tagged_fastq.py -o {output.fq1} -p {output.fq2} -c filter_fastqc.conf {input.fq1} {input.fq2}")
+
+
+
+# Quality checking of filtered reads
+rule fastqc_filtered:
+    input:
+        fq = filt_dir + "{sample}_R{read}_filtered.fastq.gz"
+    output:
+        html = qc_dir + "filtered/{sample}_R{read}_fastqc.html",
+        zip = qc_dir + "filtered/{sample}_R{read}_fastqc.zip"
+    params:
+        outdir = qc_dir + "filtered"
+    wildcard_constraints:
+        read = '\d+'
+    shell:
+        "fastqc -o {params.outdir} {input.fq}"
+
+rule multiqc_filtered:
+    input:
+        expand(qc_dir + "filtered/{sample}_R{read}_fastqc.zip",
+            sample=SAMPLES,
+            read=[1,2]),
+    output:
+        qc_dir + "filtered/multiqc_report.html"
+    threads:
+        4
+    log:
+        qc_dir + "filtered/logs/multiqc.log"
+    run:
+        out_dir = os.path.dirname(output[0])
+        in_dir = os.path.dirname(input[0].split(' ')[0])
+        shell("multiqc -f -o {out_dir} {in_dir} 2> {log} 1>&2")

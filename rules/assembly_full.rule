@@ -1,0 +1,36 @@
+rule full_assemblies:
+    input:
+        full_assembly_dir + "quast/report.html"
+
+rule spades_full_assembly:
+    input:
+        fq1=filt_dir + "{sample}_R1_filtered.fastq.gz",
+        fq2=filt_dir + "{sample}_R2_filtered.fastq.gz"
+    output:
+        full_assembly_dir + "{sample}/scaffolds.fasta"
+    threads: 6
+    params:
+        "--meta"
+    shell:
+        "python2 ~/Downloads/SPAdes-3.10.1-Linux/bin/spades.py -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o assemblies/{wildcards.sample}"
+
+rule filter_assembly_by_size:
+    input:
+        assembly_dir + "{assembly_set}/{sample}/scaffolds.fasta"
+    output:
+         assembly_dir + "{assembly_set}/{sample}/scaffolds_{minsize}.fasta"
+    wildcard_constraints:
+        minsize="[0-9]+"
+    shell:
+        "python2 scripts/filter_contigs_by_size.py {input} {wildcards.minsize} {output}"
+
+rule quast_assembly_set:
+    input:
+        expand(assembly_dir + "{{assembly_set}}/{sample}/scaffolds.fasta",
+                sample=SAMPLES)
+    output:
+        report = assembly_dir + "{assembly_set}/quast/report.html"
+    params:
+        outdir = lambda w, output: os.path.basename(output.report)
+    shell:
+        "python2 ~/Downloads/quast-4.0/quast.py -o {params.outdir} -s {input}"
