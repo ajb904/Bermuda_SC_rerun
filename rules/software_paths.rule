@@ -1,1 +1,1 @@
-SPADES = ~/Downloads/SPAdes-3.13.1-Linux/bin/spades.py
+SPADES = "~/Downloads/SPAdes-3.13.1-Linux/bin/spades.py"
