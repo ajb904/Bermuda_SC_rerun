@@ -4,8 +4,8 @@
 rule filter_contaminants:
     input:
         qc_dir + "filtered/multiqc_report.html",
-        "blank_assembly/LAST/blank_10000_v_refseq_microbial.tab",
-        "blank_assembly/scaffolds_10000.fasta"
+        "blank_assembly/LAST/blank_1000_v_refseq_microbial.tab",
+        "blank_assembly/scaffolds_1000.fasta"
 
 
 #Assemble blank sample
@@ -95,7 +95,7 @@ rule fastq_screen:
     input:
         fq1=trim_dir + "{sample}_R1_trimmed.fastq.gz",
         fq2=trim_dir + "{sample}_R2_trimmed.fastq.gz",
-        blank_idx="blank_assembly/sct-bl_10000.1.bt2"
+        blank_idx="blank_assembly/sct-bl_1000.1.bt2"
     output:
         fq1=filt_dir + "{sample}_R1_filtered.fastq.gz",
         fq2=filt_dir + "{sample}_R2_filtered.fastq.gz"
