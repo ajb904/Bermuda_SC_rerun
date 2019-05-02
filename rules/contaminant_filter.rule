@@ -19,7 +19,7 @@ rule contaminant_assembly:
     params:
         "--meta"
     shell:
-        "python2 ~/Downloads/SPAdes-3.10.1-Linux/bin/spades.py -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o blank_assembly/"
+        "python2 {SPADES} -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o blank_assembly/"
 
 
 #Check assembly stats

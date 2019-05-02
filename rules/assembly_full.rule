@@ -12,7 +12,7 @@ rule spades_full_assembly:
     params:
         "--meta"
     shell:
-        "python2 ~/Downloads/SPAdes-3.10.1-Linux/bin/spades.py -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o assemblies/{wildcards.sample}"
+        "python2 {SPADES} -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o assemblies/{wildcards.sample}"
 
 rule filter_assembly_by_size:
     input:
