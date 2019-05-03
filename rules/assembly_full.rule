@@ -13,7 +13,7 @@ rule spades_full_assembly:
         flags="--meta",
         outdir=lambda w, output: os.path.dirname(output.assembly)
     shell:
-        "python2 {SPADES} -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o {params.outdir}/"
+        "python2 {SPADES} -t {threads} {params.flags} -1 {input.fq1} -2 {input.fq2} -o {params.outdir}/"
 
 rule filter_assembly_by_size:
     input:
