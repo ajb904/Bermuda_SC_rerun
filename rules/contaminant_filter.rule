@@ -77,9 +77,10 @@ rule lastal_blank:
     wildcard_constraints:
         minsize="[0-9]+"
     params:
-        "-l 50 refs/lastdb/refseq_microbial"
+        match_len = "-l 50"
+        db=ref_lastdb_dir + "refseq_microbial"
     shell:
-        "lastal {params} {input.contigs} > {output}"
+        "lastal {params.match_len} {params.db} {input.contigs} > {output}"
 
 rule maf_convert:
     input:
