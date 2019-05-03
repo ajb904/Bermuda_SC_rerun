@@ -5,7 +5,8 @@ rule filter_contaminants:
     input:
         qc_dir + "filtered/multiqc_report.html",
         "blank_assembly/LAST/blank_1000_v_refseq_microbial.tab",
-        "blank_assembly/scaffolds_1000.fasta"
+        "blank_assembly/scaffolds_1000.fasta",
+        "blank_assembly/quast/report.html"
 
 
 #Assemble blank sample

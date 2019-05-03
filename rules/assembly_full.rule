@@ -7,12 +7,13 @@ rule spades_full_assembly:
         fq1=filt_dir + "{sample}_R1_filtered.fastq.gz",
         fq2=filt_dir + "{sample}_R2_filtered.fastq.gz"
     output:
-        full_assembly_dir + "{sample}/scaffolds.fasta"
+        assembly=full_assembly_dir + "{sample}/scaffolds.fasta"
     threads: 6
     params:
-        "--meta"
+        flags="--meta",
+        outdir=lambda w, output: os.path.basename(output.assembly)
     shell:
-        "python2 {SPADES} -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o assemblies/{wildcards.sample}"
+        "python2 {SPADES} -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o {params.outdir}"
 
 rule filter_assembly_by_size:
     input:
