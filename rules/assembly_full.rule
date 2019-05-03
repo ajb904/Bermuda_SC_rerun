@@ -11,7 +11,7 @@ rule spades_full_assembly:
     threads: 6
     params:
         flags="--meta",
-        outdir=lambda w, output: os.path.basename(output.assembly)
+        outdir=lambda w, output: os.path.dirname(output.assembly)
     shell:
         "python2 {SPADES} -t {threads} {params} -1 {input.fq1} -2 {input.fq2} -o {params.outdir}"
 
@@ -32,6 +32,6 @@ rule quast_assembly_set:
     output:
         report = assembly_dir + "{assembly_set}/quast/report.html"
     params:
-        outdir = lambda w, output: os.path.basename(output.report)
+        outdir = lambda w, output: os.path.dirname(output.report)
     shell:
         "python2 ~/Downloads/quast-4.0/quast.py -o {params.outdir} -s {input}"
