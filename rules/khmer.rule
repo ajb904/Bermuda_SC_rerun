@@ -18,8 +18,10 @@ rule load_khmer:
     output:
         graph = khmer_dir + "{sample}_{k}_countgraph"
     threads: 8
+    params:
+        mem="64G"
     shell:
-        "load-into-counting.py -k {wildcards.k} -T {threads} {output.graph} {input.fq}"
+        "load-into-counting.py -k {wildcards.k} -T {threads} -M {params.mem} {output.graph} {input.fq}"
 
 rule abund_dist:
     input:
