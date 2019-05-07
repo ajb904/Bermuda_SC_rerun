@@ -7,6 +7,7 @@ include: "rules/db_download.rule"
 include: "rules/read_QC.rule"
 include: "rules/contaminant_filter.rule"
 include: "rules/assembly_full.rule"
+include: "rules/khmer.rule"
 
 rule all:
     input:
@@ -14,3 +15,4 @@ rule all:
         rules.db_downloads.input,
         rules.filter_contaminants.input,
         rules.full_assemblies.input,
+        rules.khmer_counting.input,

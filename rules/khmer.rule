@@ -1,0 +1,40 @@
+rule khmer_counting:
+    input:
+        expand(khmer_dir + "{sample}_{k}_abund.tab", sample=SAMPLES, k=[20]),
+        expand(khmer_dir + "{sample}_{k}_medianCount.tab", sample=SAMPLES, k=[20])
+
+rule interleave_reads:
+    input:
+        fq1=filt_dir + "{sample}_R1_filtered.fastq.gz",
+        fq2=filt_dir + "{sample}_R2_filtered.fastq.gz"
+    output:
+        fq=khmer_dir + "fastq/{sample}_interleaved.fastq.gz"
+    shell:
+        "interleave-reads.py -o {output.fq} --gzip {input.fq1} {input.fq2}"
+
+rule load_khmer:
+    input:
+        fq = khmer_dir + "fastq/{sample}_interleaved.fastq.gz"
+    output:
+        graph = khmer_dir + "{sample}_{k}_countgraph"
+    threads: 8
+    shell:
+        "load-into-counting.py -k {wildcards.k} -T {threads} {output.graph} {input.fq}"
+
+rule abund_dist:
+    input:
+        fq = khmer_dir + "fastq/{sample}_interleaved.fastq.gz",
+        graph = khmer_dir + "{sample}_{k}_countgraph"
+    output:
+        hist = khmer_dir + "{sample}_{k}_abund.tab"
+    shell:
+        "abundance-dist.py -z {input.graph} {input.fq} {output.hist}"
+
+rule median_counts:
+    input:
+        fq = khmer_dir + "fastq/{sample}_interleaved.fastq.gz",
+        graph = khmer_dir + "{sample}_{k}_countgraph"
+    output:
+        counts = khmer_dir + "{sample}_{k}_medianCount.tab"
+    shell:
+        "count-median.py {input.graph} {input.fq} {output.counts}"
