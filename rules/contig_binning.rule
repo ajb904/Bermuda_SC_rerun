@@ -1,0 +1,22 @@
+rule bin_contigs:
+    input:
+        expand(binned_dir + "{sample}_1000.summary", sample=SAMPLES)
+
+rule get_contig_coverage:
+    input:
+        full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_qualimap/genome_results.txt"
+    output:
+        full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
+    shell:
+        "grep 'NODE_' {input} | cut -f 2,5 > {output}"
+
+rule maxbin:
+    input:
+        contigs=full_assembly_dir + "{sample}/scaffolds_{minsize}.fasta",
+        cov=full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
+    output:
+        bins=binned_dir + "{sample}_{minsize}.summary"
+    params:
+        prefix=lambda w, output: os.path.splitext(output.bins)[0]
+    shell:
+        "run_MaxBin.pl -contig {input.contigs} -abund {input.cov} -out {params.prefix} -min_contig_length {wildcards.minsize}"

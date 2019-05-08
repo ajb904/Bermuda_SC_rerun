@@ -1,6 +1,8 @@
 rule full_assemblies:
     input:
-        full_assembly_dir + "quast/report.html"
+        full_assembly_dir + "quast/report.html",
+        expand(full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.bam",sample=SAMPLES)
+
 
 rule spades_full_assembly:
     input:
@@ -35,3 +37,39 @@ rule quast_assembly_set:
         outdir = lambda w, output: os.path.dirname(output.report)
     shell:
         "python2 ~/Downloads/quast-4.0/quast.py -o {params.outdir} -s {input}"
+
+rule index_assembly:
+    input:
+        assembly_dir + "{assembly_set}/{sample}/scaffolds_{minsize}.fasta"
+    output:
+        expand(assembly_dir + "{{assembly_set}}/{{sample}}/{{sample}}_{{minsize}}.{ix}.bt2", ix=range(1,5)),
+        expand(assembly_dir + "{{assembly_set}}/{{sample}}/{{sample}}_{{minsize}}.rev.{ix}.bt2", ix=range(1,3))
+    params:
+        ix=lambda w, output: output[0].split('.')[0]
+    shell:
+        "bowtie2-build {input} {params.ix}"
+
+rule align_reads_to_assembly:
+    input:
+        fa=assembly_dir + "{assembly_set}/{sample}/scaffolds_{minsize}.fasta",
+        fq1=filt_dir + "{sample}_R1_filtered.fastq.gz",
+        fq2=filt_dir + "{sample}_R2_filtered.fastq.gz",
+        ix=assembly_dir + "{assembly_set}/{sample}/{sample}_{minsize}.1.bt2"
+    output:
+        assembly_dir + "{assembly_set}/{sample}/read_alignment/{sample}_v_assembly{minsize}.bam"
+    params:
+        pars="-t -X 1000",
+        ix=lambda w, input: input.ix.split('.')[0]
+    shell:
+        "bowtie2 -p {threads} {params.pars} -1 {input.fq1} -2 {input.fq2} -x {params.ix} | samtools view -uS - | samtools sort -o {output} -"
+
+rule assembly_alignment_qc:
+    input:
+        assembly_dir + "{assembly_set}/{sample}/read_alignment/{sample}_v_assembly{minsize}.bam"
+    output:
+        html=assembly_dir + "{assembly_set}/{sample}/read_alignment/{sample}_v_assembly{minsize}_qualimap/qualimapReport.html",
+        txt=assembly_dir + "{assembly_set}/{sample}/read_alignment/{sample}_v_assembly{minsize}_qualimap/genome_results.txt"
+    params:
+        outdir=lambda w, output: os.path.dirname(output.html)
+    shell:
+        "qualimap bamqc -bam {input} -outdir {params.outdir}"
