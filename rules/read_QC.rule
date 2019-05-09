@@ -20,7 +20,7 @@ rule fastqc_raw:
 rule raw_multiqc:
     input:
         expand(qc_dir + "raw/{sample}_R{read}_fastqc.zip",
-            sample=SAMPLES,
+            sample=SAMPLES+BLANK,
             read=[1,2]),
     output:
         qc_dir + "raw/multiqc_report.html"
@@ -64,7 +64,7 @@ rule trim_fastqc:
 rule trim_multiqc:
     input:
         expand(qc_dir + "trimmed/{sample}_R{read}_trimmed_fastqc.zip",
-            sample=SAMPLES,
+            sample=SAMPLES+BLANK,
             read=[1,2]),
     output:
         qc_dir + "trimmed/multiqc_report.html"

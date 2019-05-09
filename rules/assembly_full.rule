@@ -30,7 +30,7 @@ rule filter_assembly_by_size:
 rule quast_assembly_set:
     input:
         expand(assembly_dir + "{{assembly_set}}/{sample}/scaffolds.fasta",
-                sample=SAMPLES)
+                sample=SAMPLES+BLANK)
     output:
         report = assembly_dir + "{assembly_set}/quast/report.html"
     params:

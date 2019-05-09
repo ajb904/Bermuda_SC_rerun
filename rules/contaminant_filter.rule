@@ -129,7 +129,7 @@ rule fastqc_filtered:
 rule multiqc_filtered:
     input:
         expand(qc_dir + "filtered/{sample}_R{read}_filtered_fastqc.zip",
-            sample=SAMPLES,
+            sample=SAMPLES+BLANK,
             read=[1,2]),
     output:
         qc_dir + "filtered/multiqc_report.html"
