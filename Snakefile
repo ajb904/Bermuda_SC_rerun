@@ -1,5 +1,6 @@
 conf: "config.yml"
-SAMPLES = ["sct-8p2","sct-8p3","sct-8p4","sct-8t3","sct-8t4","sct-bl"]
+SAMPLES = ["sct-8p2","sct-8p3","sct-8p4","sct-8t3","sct-8t4"]
+BLANK = ["sct-bl"]
 
 include: "rules/folder_setup.rule"
 include: "rules/software_paths.rule"

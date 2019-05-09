@@ -1,7 +1,7 @@
 rule khmer_counting:
     input:
-        expand(khmer_dir + "{sample}_{k}_abund.tab", sample=SAMPLES, k=[20]),
-        expand(khmer_dir + "{sample}_{k}_medianCount.tab", sample=SAMPLES, k=[20])
+        expand(khmer_dir + "{sample}_{k}_abund.tab", sample=SAMPLES+BLANK, k=[20]),
+        expand(khmer_dir + "{sample}_{k}_medianCount.tab", sample=SAMPLES+BLANK, k=[20])
 
 rule interleave_reads:
     input:
