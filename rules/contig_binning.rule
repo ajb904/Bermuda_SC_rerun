@@ -8,9 +8,12 @@ rule get_contig_coverage:
     output:
         full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
     shell:
-        "grep 'NODE_' {input} | cut -f 2,5 > {output}"
+        "samtools depth -a {input} | awk 'BEGIN {{OFS="\t"}} {{ sum[$1] += $2; count[$1] += 1 }} END {{ for ( key in count ) {{ print key, sum[key] / count[key] }} }}' | sort > {output}"
+#         "grep 'NODE_' {input} | cut -f 2,5 > {output}"
+
 
 rule maxbin:
+# Need to do export LD_LIBRARY_PATH=~/.local/lib64:$LD_LIBRARY_PATH to make maxbin work
     input:
         contigs=full_assembly_dir + "{sample}/scaffolds_{minsize}.fasta",
         cov=full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
