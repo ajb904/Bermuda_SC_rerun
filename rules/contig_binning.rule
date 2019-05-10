@@ -8,8 +8,9 @@ rule get_contig_coverage:
     output:
         full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
     shell:
-        "samtools depth -a {input} | awk 'BEGIN {{OFS="\t"}} {{ sum[$1] += $2; count[$1] += 1 }} END {{ for ( key in count ) {{ print key, sum[key] / count[key] }} }}' | sort > {output}"
-#         "grep 'NODE_' {input} | cut -f 2,5 > {output}"
+        """
+        samtools depth -a {input} | awk 'BEGIN {{OFS="\\t"}} {{ sum[$1] += $2; count[$1] += 1 }} END {{ for ( key in count ) {{ print key, sum[key] / count[key] }} }}' | sort > {output}
+        """
 
 
 rule maxbin:
