@@ -19,7 +19,7 @@ rule maxbin:
         contigs=full_assembly_dir + "{sample}/scaffolds_{minsize}.fasta",
         cov=full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
     output:
-        bins=binned_dir + "{sample}_{minsize}.summary"
+        bins=binned_dir + "{sample}_bins/{sample}_{minsize}.summary"
     params:
         prefix=lambda w, output: os.path.splitext(output.bins)[0]
     shell:
