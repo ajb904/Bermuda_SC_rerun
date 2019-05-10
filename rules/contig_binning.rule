@@ -1,6 +1,6 @@
 rule bin_contigs:
     input:
-        expand(binned_dir + "{sample}_1000.summary", sample=SAMPLES)
+        expand(binned_dir + "{sample}_bins/{sample}_1000.summary", sample=SAMPLES)
 
 rule get_contig_coverage:
     input:
