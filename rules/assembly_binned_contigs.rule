@@ -18,3 +18,14 @@ rule spades_binned_assembly:
         outdir=lambda w, output: os.path.dirname(output.assembly)
     shell:
         "python2 {SPADES} -t {threads} {params.flags} -1 {input.fq1} -2 {input.fq2} -s {input.fq0} -o {params.outdir}/"
+
+rule quast_assembly_set_binned:
+    input:
+        expand(binned_assembly_dir + "{sample}/scaffolds.fasta",
+                sample=SAMPLES)
+    output:
+        report = binned_assembly_dir + "quast/report.html"
+    params:
+        outdir = lambda w, output: os.path.dirname(output.report)
+    shell:
+        "python2 ~/Downloads/quast-4.0/quast.py -o {params.outdir} -s {input}"

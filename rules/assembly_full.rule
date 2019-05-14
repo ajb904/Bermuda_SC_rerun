@@ -27,12 +27,12 @@ rule filter_assembly_by_size:
     shell:
         "python2 scripts/filter_contigs_by_size.py {input} {wildcards.minsize} {output}"
 
-rule quast_assembly_set:
+rule quast_assembly_set_full:
     input:
-        expand(assembly_dir + "{{assembly_set}}/{sample}/scaffolds.fasta",
+        expand(full_assembly_dir + "{sample}/scaffolds.fasta",
                 sample=SAMPLES+BLANK)
     output:
-        report = assembly_dir + "{assembly_set}/quast/report.html"
+        report = full_assembly_dir + "quast/report.html"
     params:
         outdir = lambda w, output: os.path.dirname(output.report)
     shell:
