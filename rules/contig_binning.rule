@@ -62,7 +62,7 @@ rule get_tricho_bin:
                     bin_name = row[0]
                     break
 
-            bin_fasta_name = "results/maxbin/{wildcards.sample}_bins/{bin_name}.fasta"
+            bin_fasta_name = "results/maxbin/{}_bins/{}.fasta".format(wildcards.sample, bin_name)
 
             copyfile(bin_fasta_name, output.fasta)
             shell("samtools faidx {output.fasta}")
