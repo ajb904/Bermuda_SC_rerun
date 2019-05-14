@@ -1,6 +1,7 @@
 rule bin_contigs:
     input:
-        expand(binned_dir + "{sample}_bins/{sample}_1000.summary", sample=SAMPLES)
+        expand(binned_dir + "{sample}_bins/{sample}_1000.summary", sample=SAMPLES),
+        expand(checkM_dir + "{sample}_1000/summary.tsv", sample=SAMPLES)
 
 rule get_contig_coverage:
     input:
@@ -24,3 +25,24 @@ rule maxbin:
         prefix=lambda w, output: os.path.splitext(output.bins)[0]
     shell:
         "run_MaxBin.pl -contig {input.contigs} -abund {input.cov} -out {params.prefix} -min_contig_length {wildcards.minsize}"
+
+#CheckM, to get taxonomy summary
+rule checkm_tax_summary:
+    input:
+        bins=binned_dir + "{sample}_bins/{sample}_{minsize}.summary"
+    output:
+        table=checkM_dir + "{sample}_{minsize}/summary.tsv",
+        align=checkM_dir + "{sample}_{minsize}/aligns.out"
+    params:
+        bin_dir=lambda w, input: os.path.dirname(input.bins),
+        out_dir=lambda w, output: os.path.dirname(output.table)
+    shell:
+        "checkm lineage_wf -x fasta -a {output.align} -f {output.table} --tab_table {params.bin_dir} {params.out_dir}"
+
+#Get tricho genome bin (the one with the highest coverage and/or assigned as cyanobacteria by checkM)
+
+#Index tricho genome bin
+
+#Align reads to genome bin with bowtie2 and extract to fastq (could also do this with Samtools from previous read alignments?)
+
+#Reassemble extracted reads.
