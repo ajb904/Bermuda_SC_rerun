@@ -92,4 +92,4 @@ rule extract_tricho_reads:
         fq2=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly_R2.fastq.gz",
         fq0=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly_single.fastq.gz",
     shell:
-        "samtools fastq -1 {output.fq1} -2 {output.fq2} -s {output.fq0} {input.bam}"
+        "samtools sort -n {input.bam} | fastq -1 {output.fq1} -2 {output.fq2} -s {output.fq0} -"
