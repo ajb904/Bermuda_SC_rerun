@@ -1,11 +1,17 @@
+import csv
+from shutil import copyfile
+
 rule bin_contigs:
     input:
         expand(binned_dir + "{sample}_bins/{sample}_1000.summary", sample=SAMPLES),
-        expand(checkM_dir + "{sample}_1000/summary.tsv", sample=SAMPLES)
+        expand(checkM_dir + "{sample}_1000/summary.tsv", sample=SAMPLES),
+        expand(tricho_bin_dir + "{sample}_1000_tricho_assembly.fasta", sample=SAMPLES),
+        expand(tricho_bin_dir + "{sample}_1000_tricho_assembly_R{read}.fastq.gz", sample=SAMPLES, read=[1,2]),
+        expand(tricho_bin_dir + "{sample}_1000_tricho_assembly_single.fastq.gz", sample=SAMPLES)
 
 rule get_contig_coverage:
     input:
-        full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_qualimap/genome_results.txt"
+        full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}.bam"
     output:
         full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}_cov.tsv"
     shell:
@@ -28,6 +34,7 @@ rule maxbin:
 
 #CheckM, to get taxonomy summary
 rule checkm_tax_summary:
+#export PATH=$PATH:~/Downloads/pplacer-Linux-v1.1.alpha19/
     input:
         bins=binned_dir + "{sample}_bins/{sample}_{minsize}.summary"
     output:
@@ -40,9 +47,49 @@ rule checkm_tax_summary:
         "checkm lineage_wf -x fasta -a {output.align} -f {output.table} --tab_table {params.bin_dir} {params.out_dir}"
 
 #Get tricho genome bin (the one with the highest coverage and/or assigned as cyanobacteria by checkM)
-
 #Index tricho genome bin
+rule get_tricho_bin:
+    input:
+        table=checkM_dir + "{sample}_{minsize}/summary.tsv"
+    output:
+        fasta=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.fasta",
+        faix=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.fasta.fai"
+    run:
+        with open(input.table) as tsvfile:
+            tsv = csv.reader(tsvfile, dialect="excel-tab")
+            for row in tsv:
+                if row[1] == "p__Cyanobacteria (UID2192)":
+                    bin_name = row[0]
+                    break
 
-#Align reads to genome bin with bowtie2 and extract to fastq (could also do this with Samtools from previous read alignments?)
+            bin_fasta_name = "results/maxbin/{wildcards.sample}_bins/{bin_name}.fasta"
 
-#Reassemble extracted reads.
+            copyfile(bin_fasta_name, output.fasta)
+            shell("samtools faidx {output.fasta}")
+
+rule make_tricho_bed:
+    input:
+        faix=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.fasta.fai"
+    output:
+        bed=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.bed"
+    shell:
+        """awk 'BEGIN {{FS="\t"}}; {{print $1 FS "0" FS $2}}' {input.faix} > {output.bed}"""
+
+rule get_tricho_bam:
+    input:
+        bam=full_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly{minsize}.bam",
+        bed=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.bed"
+    output:
+        bam=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.bam"
+    shell:
+        "samtools view -b -L {input.bed} {input.bam} > {output.bam}"
+
+rule extract_tricho_reads:
+    input:
+        bam=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly.bam"
+    output:
+        fq1=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly_R1.fastq.gz",
+        fq2=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly_R2.fastq.gz",
+        fq0=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly_single.fastq.gz",
+    shell:
+        "samtools fastq -1 {output.fq1} -2 {output.fq2} -s {output.fq0} {input.bam}"
