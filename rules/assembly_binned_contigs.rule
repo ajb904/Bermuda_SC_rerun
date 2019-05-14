@@ -1,0 +1,20 @@
+rule binned_assemblies:
+    input:
+        binned_assembly_dir + "quast/report.html",
+        expand(binned_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.bam",sample=SAMPLES)
+
+
+#Have to hardcode minsize=1000 here, otherwise filenames get too complicated
+rule spades_binned_assembly:
+    input:
+        fq1=tricho_bin_dir + "{sample}_1000_tricho_assembly_R1.fastq.gz",
+        fq2=tricho_bin_dir + "{sample}_1000_tricho_assembly_R2.fastq.gz",
+        fq0=tricho_bin_dir + "{sample}_1000_tricho_assembly_single.fastq.gz",
+    output:
+        assembly=binned_assembly_dir + "{sample}/scaffolds.fasta"
+    threads: 6
+    params:
+        flags="--careful",
+        outdir=lambda w, output: os.path.dirname(output.assembly)
+    shell:
+        "python2 {SPADES} -t {threads} {params.flags} -1 {input.fq1} -2 {input.fq2} -s {input.fq0} -o {params.outdir}/"

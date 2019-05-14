@@ -10,6 +10,7 @@ include: "rules/contaminant_filter.rule"
 include: "rules/assembly_full.rule"
 include: "rules/khmer.rule"
 include: "rules/contig_binning.rule"
+include: "rules/assembly_binned_contigs.rule"
 
 rule all:
     input:
@@ -19,3 +20,4 @@ rule all:
         rules.full_assemblies.input,
         rules.khmer_counting.input,
         rules.bin_contigs.input,
+        rules.binned_assemblies.input,
