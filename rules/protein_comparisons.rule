@@ -41,9 +41,10 @@ rule all_v_all_diamond:
     output:
         annotation_dir + "all_v_all_diamond.m8"
     params:
-        db=lambda w, output: os.path.splitext(output[0])[0]
+        db=lambda w, output: os.path.splitext(output[0])[0],
+        outfmt="qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen"
     threads: 8
     run:
         shell("cat {input} > {params.db}.fasta")
         shell("diamond makedb --in {params.db}.fasta -d {params.db}.dmnd")
-        shell("diamond blastp -d {params.db} -q {params.db}.fasta -o {output} -f 6 -p {threads}")
+        shell("diamond blastp -f 6 {params.outfmt} -d {params.db} -q {params.db}.fasta -o {output} -f 6 -p {threads}")
