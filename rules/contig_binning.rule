@@ -7,7 +7,8 @@ rule bin_contigs:
         expand(checkM_dir + "{sample}_1000/summary.tsv", sample=SAMPLES),
         expand(tricho_bin_dir + "{sample}_1000_tricho_assembly.fasta", sample=SAMPLES),
         expand(tricho_bin_dir + "{sample}_1000_tricho_assembly_R{read}.fastq.gz", sample=SAMPLES, read=[1,2]),
-        expand(tricho_bin_dir + "{sample}_1000_tricho_assembly_single.fastq.gz", sample=SAMPLES)
+        expand(tricho_bin_dir + "{sample}_1000_tricho_assembly_single.fastq.gz", sample=SAMPLES),
+        tricho_bin_dir + "quast/report.html"
 
 rule get_contig_coverage:
     input:
@@ -45,6 +46,16 @@ rule checkm_tax_summary:
         out_dir=lambda w, output: os.path.dirname(output.table)
     shell:
         "checkm lineage_wf -x fasta -a {output.align} -f {output.table} --tab_table {params.bin_dir} {params.out_dir}"
+
+
+rule checkm_tetra:
+    input:
+        contigs=full_assembly_dir + "{sample}/scaffolds_{minsize}.fasta"
+    output:
+        tetra=checkM_dir + "{sample}_{minsize}/tetra.tsv"
+    shell:
+        "checkm tetra {input.contigs} {output.tetra}"
+
 
 #Get tricho genome bin (the one with the highest coverage and/or assigned as cyanobacteria by checkM)
 #Index tricho genome bin
@@ -93,3 +104,15 @@ rule extract_tricho_reads:
         fq0=tricho_bin_dir + "{sample}_{minsize}_tricho_assembly_single.fastq.gz",
     shell:
         "samtools sort -n {input.bam} | samtools fastq -1 {output.fq1} -2 {output.fq2} -s {output.fq0} -"
+
+
+rule quast_tricho_bin:
+    input:
+        expand(tricho_bin_dir + "{sample}_1000_tricho_assembly.fasta",
+                sample=SAMPLES)
+    output:
+        report = tricho_bin_dir + "quast/report.html"
+    params:
+        outdir = lambda w, output: os.path.dirname(output.report)
+    shell:
+        "python2 ~/Downloads/quast-4.0/quast.py -o {params.outdir} -s {input}"

@@ -1,0 +1,49 @@
+rule protein_comparison:
+    input:
+        annotation_dir + "all_v_all_diamond.m8"
+
+rule prokka_annotations:
+    input:
+        contigs=binned_assembly_dir + "{sample}/scaffolds_1000.fasta"
+    output:
+        annotation_dir + "{sample}_annotations/{sample}.gff",
+        annotation_dir + "{sample}_annotations/{sample}.faa",
+    params:
+        outdir=lambda w, output: os.path.dirname(output[0])
+    wildcard_constraints:
+        sample="[A-Za-z0-9-]+",
+        group="[A-Za-z0-9]+"
+    threads: 4
+    shell:
+        "~/Downloads/prokka/bin/prokka --outdir {params.outdir} --prefix {wildcards.sample} --locustag {wildcards.sample} --addgenes --cpus {threads} --force {input.contigs}"
+
+rule get_IMS101_prot:
+    input:
+    output:
+        annotation_dir + "IMS101_annotations/IMS101.faa"
+    run:
+        import urllib
+
+        accession="GCA_000014265.1_ASM1426v1"
+        print(accession)
+        url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/%s/%s/%s/%s/%s/%s_protein.faa.gz" % (accession[0:3], accession[4:7], accession[7:10], accession[10:13], accession, accession)
+        print(url)
+        outfile = '%s.gz' % output
+
+        urllib.request.urlretrieve(url, outfile)
+
+        shell("gunzip {output}.gz")
+
+
+rule all_v_all_diamond:
+    input:
+        expand(annotation_dir + "{sample}_annotations/{sample}.faa", sample=SAMPLES + ["IMS101"])
+    output:
+        annotation_dir + "all_v_all_diamond.m8"
+    params:
+        db="MCL/all_ALL_genomes"
+    threads: 8
+    run:
+        shell("cat {input} > {params.db}.fasta")
+        shell("diamond makedb --in {params.db}.fasta -d {params.db}.dmnd")
+        shell("diamond blastp -d {params.db} -q {params.db}.fasta -o {output} -f 6 -p {threads}")
