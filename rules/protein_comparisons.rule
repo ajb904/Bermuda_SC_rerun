@@ -41,7 +41,7 @@ rule all_v_all_diamond:
     output:
         annotation_dir + "all_v_all_diamond.m8"
     params:
-        db="MCL/all_ALL_genomes"
+        db=lambda w, output: os.path.splitext(output[0])[0]
     threads: 8
     run:
         shell("cat {input} > {params.db}.fasta")
