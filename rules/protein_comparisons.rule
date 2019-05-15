@@ -47,4 +47,4 @@ rule all_v_all_diamond:
     run:
         shell("cat {input} > {params.db}.fasta")
         shell("diamond makedb --in {params.db}.fasta -d {params.db}.dmnd")
-        shell("diamond blastp -f 6 {params.outfmt} -d {params.db} -q {params.db}.fasta -o {output} -f 6 -p {threads}")
+        shell("diamond blastp --query-cover 80 --subject-cover 80 -d {params.db} -q {params.db}.fasta -o {output} -f 6 -p {threads}")
