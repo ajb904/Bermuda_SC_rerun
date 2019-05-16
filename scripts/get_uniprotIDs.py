@@ -4,7 +4,7 @@ from Bio import SeqIO
 
 url = "https://www.uniprot.org/uploadlists/"
 
-fasta = SeqIO.parse(sys.argv[1])
+fasta = SeqIO.parse(sys.argv[1], 'fasta')
 
 query = " ".join([s.id for s in fasta])
 
