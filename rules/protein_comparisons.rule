@@ -1,6 +1,9 @@
 rule protein_comparison:
     input:
-        annotation_dir + "all_v_all_diamond.m8"
+        annotation_dir + "all_v_all_diamond.m8",
+        "data/IMS101/IMS101_proteome_data.tsv",
+        "data/IMS101/EMBL_to_UniProt.txt"
+        
 
 rule prokka_annotations:
     input:
@@ -48,3 +51,20 @@ rule all_v_all_diamond:
         shell("cat {input} > {params.db}.fasta")
         shell("diamond makedb --in {params.db}.fasta -d {params.db}.dmnd")
         shell("diamond blastp --query-cover 80 --subject-cover 80 -d {params.db} -q {params.db}.fasta -o {output} -f 6 -p {threads}")
+
+rule get_IMS101_uniprot_to_EMBL_mapping:
+    input:
+        fasta=annotation_dir + "IMS101_annotations/IMS101.faa",
+        script="scripts/get_uniprotIDs.py"
+    output:
+        "data/IMS101/EMBL_to_UniProt.txt"
+    shell:
+        "python2.7 {input.script} {input.fasta} > {output}"
+
+rule get_IMS101_protein_data:
+    input:
+        script="scripts/get_trichoProteome.py"
+    output:
+        "data/IMS101/IMS101_proteome_data.tsv"
+    shell:
+        "python2.7 {input.script} > {output}"
