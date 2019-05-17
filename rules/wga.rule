@@ -60,7 +60,7 @@ rule show_coords:
     output:
         coords=wga_dir + "{sample}_pseudomolecule_v_IMS101.coords"
     shell:
-        "show-coords -qclk {input.delta} > {output.coords}"
+        "show-coords -cdlrT {input.delta} > {output.coords}"
 
 rule coords_to_crunch:
     input:
