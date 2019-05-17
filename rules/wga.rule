@@ -69,5 +69,5 @@ rule coords_to_crunch:
         crunch=wga_dir + "{sample}_pseudomolecule_v_IMS101.crunch"
     shell:
         """
-        tail -n +5 {input.coords} | awk 'BEGIN{{FS="\t”; OFS=“ “}}{{print $5,$7,$1,$2,$16,$3,$4,$17}}' > {output.crunch}
+        tail -n +5 {input.coords} | awk 'BEGIN{{FS="\t"; OFS=" "}}{{print $5,$7,$1,$2,$16,$3,$4,$17}}' > {output.crunch}
         """
