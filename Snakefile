@@ -12,6 +12,7 @@ include: "rules/khmer.rule"
 include: "rules/contig_binning.rule"
 include: "rules/assembly_binned_contigs.rule"
 include: "rules/protein_comparisons.rule"
+include: "rules/wga.rule"
 
 rule all:
     input:
@@ -23,3 +24,4 @@ rule all:
         rules.bin_contigs.input,
         rules.binned_assemblies.input,
         rules.protein_comparison.input,
+        rules.whole_genome_alignment.input,

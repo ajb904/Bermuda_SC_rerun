@@ -1,0 +1,71 @@
+rule whole_genome_alignment:
+    input:
+        expand(wga_dir + "{sample}_pseudomolecule_v_IMS101.crunch", sample=SAMPLES)
+
+rule get_IMS101_genome:
+    input:
+    output:
+        ref_fasta_dir + "IMS101_genome.fasta"
+    run:
+        import urllib
+
+        accession="GCA_000014265.1_ASM1426v1"
+        print(accession)
+        url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/%s/%s/%s/%s/%s/%s_genomic.fna.gz" % (accession[0:3], accession[4:7], accession[7:10], accession[10:13], accession, accession)
+        print(url)
+        outfile = '%s.gz' % output
+
+        urllib.request.urlretrieve(url, outfile)
+
+        shell("gunzip {output}.gz")
+
+
+rule abacas_alignment:
+    input:
+        ref=ref_fasta_dir + "IMS101_genome.fasta",
+        query=assembly_dir + "binned/{sample}/scaffolds_1000.fasta"
+    output:
+        ord_contigs=wga_dir + "{sample}_v_IMS101.fasta",
+        uncov=wga_dir + "{sample}_v_IMS101.Gaps_onRef",
+        comp=wga_dir + "{sample}_v_IMS101.crunch"
+    params:
+        prefix=lambda w, output: os.path.splitext(output.ord_contigs)[0]
+    shell:
+        "perl {ABACAS} -bca -r {input.ref} -q {input.query} -p promer -g {params.prefix} -o {params.prefix}"
+
+rule promer_realign:
+    input:
+        ref=ref_fasta_dir + "IMS101_genome.fasta",
+        query=wga_dir + "{sample}_v_IMS101.fasta"
+    output:
+        delta=wga_dir + "{sample}_pseudomolecule_v_IMS101.delta"
+    params:
+        prefix=lambda w, output: os.path.splitext(output.delta)[0]
+    shell:
+        "promer --maxmatch -p {params.prefix} {input.ref} {input.query}"
+
+rule delta_filter:
+    input:
+        delta=wga_dir + "{sample}_pseudomolecule_v_IMS101.delta"
+    output:
+        delta=wga_dir + "{sample}_pseudomolecule_v_IMS101_filt.delta"
+    shell:
+        "delta-filter -q -i 50 -l 100 {input.delta} > {output.delta}"
+
+rule show_coords:
+    input:
+        delta=wga_dir + "{sample}_pseudomolecule_v_IMS101_filt.delta"
+    output:
+        coords=wga_dir + "{sample}_pseudomolecule_v_IMS101.coords"
+    shell:
+        "show-coords -qclk {input.delta} > {output.coords}"
+
+rule coords_to_crunch:
+    input:
+        coords=wga_dir + "{sample}_pseudomolecule_v_IMS101.coords"
+    output:
+        crunch=wga_dir + "{sample}_pseudomolecule_v_IMS101.crunch"
+    shell:
+        """
+        tail -n +5 {input.coords} | awk 'BEGIN{{FS="\t”; OFS=“ “}}{{print $5,$7,$1,$2,$16,$3,$4,$17}}' > {output.crunch}
+        """
