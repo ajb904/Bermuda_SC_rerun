@@ -28,6 +28,7 @@ rule abacas_alignment:
         ord_contigs=wga_dir + "{sample}_v_IMS101.fasta",
         uncov=wga_dir + "{sample}_v_IMS101.Gaps_onRef",
         comp=wga_dir + "{sample}_v_IMS101.crunch"
+    threads: 8
     params:
         prefix=lambda w, output: os.path.splitext(output.ord_contigs)[0]
     shell:
