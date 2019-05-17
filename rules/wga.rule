@@ -32,7 +32,7 @@ rule abacas_alignment:
     params:
         prefix=lambda w, output: os.path.splitext(output.ord_contigs)[0]
     shell:
-        "perl {ABACAS} -bca -r {input.ref} -q {input.query} -p promer -g {params.prefix} -o {params.prefix}"
+        "perl {ABACAS} -bcad -r {input.ref} -q {input.query} -p promer -g {params.prefix} -o {params.prefix}"
 
 rule promer_realign:
     input:
@@ -40,6 +40,7 @@ rule promer_realign:
         query=wga_dir + "{sample}_v_IMS101.fasta"
     output:
         delta=wga_dir + "{sample}_pseudomolecule_v_IMS101.delta"
+    threads: 8
     params:
         prefix=lambda w, output: os.path.splitext(output.delta)[0]
     shell:
