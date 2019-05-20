@@ -1,7 +1,8 @@
 rule binned_assemblies:
     input:
         binned_assembly_dir + "quast/report.html",
-        expand(binned_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.bam",sample=SAMPLES)
+        expand(binned_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.bam",sample=SAMPLES),
+        expand(binned_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.vcf", sample=SAMPLES)
 
 
 #Have to hardcode minsize=1000 here, otherwise filenames get too complicated
@@ -29,3 +30,11 @@ rule quast_assembly_set_binned:
         outdir = lambda w, output: os.path.dirname(output.report)
     shell:
         "python2 ~/Downloads/quast-4.0/quast.py -o {params.outdir} -s {input}"
+
+rule binned_assembly_mpileup:
+    input:
+        binned_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.bam"
+    output:
+        binned_assembly_dir + "{sample}/read_alignment/{sample}_v_assembly1000.vcf"
+    shell:
+        "samtools mpileup -gu {input} | bcftools call -cv -o {output} -"
